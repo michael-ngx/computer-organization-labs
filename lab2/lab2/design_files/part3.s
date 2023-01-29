@@ -1,4 +1,4 @@
-/* Program that counts consecutive 1's */
+/* Program that counts consecutive 1's, stored in R5, consecutive 0's, stored in R6, alternating 0's 1's, stored in R7 */
 
             .text                   // executable code follows
             .global _start                  
@@ -79,4 +79,4 @@ TEST_NUM:   .word   0x103fe00f
             .word   0x10660000
             .word   0x0
 
-            .end                            
+            .end
