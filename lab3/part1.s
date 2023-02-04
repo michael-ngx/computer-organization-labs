@@ -1,4 +1,9 @@
-.global _start
+/* Lab 3 Part I
+ *    
+ *    
+ */
+                .text
+                .global _start
 _start:
                 MOV     sp, #0x20000        // Initialize sp
                 LDR		R8, =0xFF200050     // R8 holds address of KEYs
