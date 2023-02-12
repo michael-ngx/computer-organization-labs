@@ -40,16 +40,20 @@
                 .global  _start
 _start:                                         
 /* Set up stack pointers for IRQ and SVC processor modes */
-                  ... code not shown
+                  MOV      R0, #IRQ_MODE
+                  MSR      CPSR, R0
+                  LDR      sp, =0x40000
+                  MOV      R0, #SVC_MODE
+/* Enable IRQ interrupts in the ARM processor */                  
+                  ADD      R0, #INT_ENABLE
+                  MSR      CPSR, R0
+                  LDR      sp, =0x20000
 
                   BL       CONFIG_GIC         // configure the ARM generic
                                               // interrupt controller
                   BL       CONFIG_PRIV_TIMER  // configure A9 Private Timer
-                  BL       CONFIG_KEYS        // configure the pushbutton
-                                              // KEYs port
+                  BL       CONFIG_KEYS        // configure the KEYs port
 
-/* Enable IRQ interrupts in the ARM processor */
-                  ... code not shown
                   LDR      R5, =0xFF200000    // LEDR base address
 LOOP:                                          
                   LDR      R3, COUNT          // global variable
@@ -65,18 +69,42 @@ RUN:            .word    0x1                  // initial value to increment COUN
 
 /* Configure the A9 Private Timer to create interrupts at 0.25 second intervals */
 CONFIG_PRIV_TIMER:                             
-                ... code not shown
+                LDR      R0, =0xFFFEC600         // R0 <- Address of Timer
+                LDR      R1, =50000000          
+                STR      R1, [R0]                // Load value for timer (0.25s)
+                MOV      R1, #1                  // R1 <- 1
+                STR      R1, [R0, #0xC]          // Avoid going straight to interrupt
+                MOV      R1, #0b111              // R1 <- ...111
+                STR      R1, [R0, #0x8]          // Enable interrupt, Enable reload, Starts timer
+                
                 MOV      PC, LR
                    
 /* Configure the pushbutton KEYS to generate interrupts */
 CONFIG_KEYS:                                    
-                ... code not shown
+                LDR      R0, =0xFF200058         // R0 <- Address of KEY Interupt Mask
+                MOV      R1, #0b1111             // R1 <- ...1111
+                STR      R1, [R0]                // Enable KEY Interupt Mask
                 MOV      PC, LR
 
 /*--- IRQ ---------------------------------------------------------------------*/
 IRQ_HANDLER:
-                ... code not shown
+                PUSH     {R0-R7, LR}
+    
+                /* Read the ICCIAR in the CPU interface */
+                LDR      R4, =0xFFFEC100
+                LDR      R5, [R4, #0x0C]         // read the interrupt ID
 
+                /* Check which device caused interrupt and act accordingly */
+                CMP      R5, #29
+                BLEQ     PRIV_TIMER_ISR
+                CMP      R5, #73
+                BLEQ     KEY_ISR
+
+EXIT_IRQ:
+                /* Write to the End of Interrupt Register (ICCEOIR) */
+                STR      R5, [R4, #0x10]
+    
+                POP      {R0-R7, LR}
                 SUBS     PC, LR, #4
 
 /****************************************************************************************
@@ -86,8 +114,16 @@ IRQ_HANDLER:
  ***************************************************************************************/
                 .global  KEY_ISR
 KEY_ISR:        
-                ... code not shown
+                LDR      R0, =0xFF200050        // R0 holds address of KEY
+                LDR      R1, [R0, #0x0C]        // R1 <- KEY Edgecapture
+                
+                LDR      R2, RUN
+                CMP      R2, #0
+                MOVEQ    R2, #1
+                MOVNE    R2, #0
+                STR      R2, RUN
 
+                STR      R1, [R0, #0x0C]        // Reset KEY Edgecapture
                 MOV      PC, LR
 
 /******************************************************************************
@@ -97,7 +133,15 @@ KEY_ISR:
  *****************************************************************************/
                 .global    TIMER_ISR
 PRIV_TIMER_ISR:
-                ... code not shown
+                LDR      R0, =0xFFFEC60C
+                MOV      R1, #1
+                STR      R1, [R0]         // Resets timer interrupt status  
+      
+                LDR      R0, COUNT        // R0 <- COUNT
+                LDR      R1, RUN          // R1 <- RUN
+                
+                ADD      R0, R1           // R0 <- R0 + R1
+                STR      R0, COUNT        // R0 -> COUNT
 
                 MOV      PC, LR
 /* 
