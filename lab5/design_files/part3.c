@@ -69,7 +69,7 @@ int main(void)
     while (1)
     {
         /* Erase any boxes and lines that were drawn in the last iteration */
-        ...
+        
 
         // code for drawing the boxes and lines (not shown)
         // code for updating the locations of boxes (not shown)

@@ -43,27 +43,58 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-// Begin part1.s for Lab 7
-
-volatile int pixel_buffer_start; // global variable
+// global variable
+volatile int pixel_buffer_start;        // Buffer
 
 // Function declarations
 void clear_screen();
 void swap(int* a, int* b);
 void draw_line(int x0, int y0, int x1, int y1, short int color);
 void plot_pixel(int x, int y, short int line_color);
+void wait_for_vsync();
 
+// Main program
 int main(void)
 {
     volatile int * pixel_ctrl_ptr = (int *)0xFF203020;
-    /* Read location of the pixel buffer from the pixel buffer controller */
+    /* set front pixel buffer to start of FPGA On-chip memory */
+    *(pixel_ctrl_ptr + 1) = 0xC8000000; // first store the address in the 
+                                        // back buffer
+    /* now, swap the front/back buffers, to set the front buffer location */
+    wait_for_vsync();
+    /* initialize a pointer to the pixel buffer, used by drawing functions */
     pixel_buffer_start = *pixel_ctrl_ptr;
+    clear_screen(); // pixel_buffer_start points to the pixel buffer
+    /* set back pixel buffer to start of SDRAM memory */
+    *(pixel_ctrl_ptr + 1) = 0xC0000000;
+    pixel_buffer_start = *(pixel_ctrl_ptr + 1); // we draw on the back buffer
+    clear_screen(); // pixel_buffer_start points to the pixel buffer
 
-    clear_screen();
-    draw_line(0, 0, 150, 150, 0x001F);   // this line is blue
-    draw_line(150, 150, 319, 0, 0x07E0); // this line is green
-    draw_line(0, 239, 319, 239, 0xF800); // this line is red
-    draw_line(319, 0, 0, 239, 0xF81F);   // this line is a pink color
+
+    /* current y*/
+    int y = 0;
+    bool falling = true;
+
+    draw_line(0, y, RESOLUTION_X, y, CYAN);
+    wait_for_vsync();
+    pixel_buffer_start = *(pixel_ctrl_ptr + 1);
+
+    while (1){
+        draw_line(0, y, RESOLUTION_X, y, 0);             // Draw black to previous line
+        
+        // Calculate new line
+        if (falling){
+            if (y == RESOLUTION_Y) falling = false;
+            else y++;
+        } else {
+            if (y == 0) falling = true;
+            else y--;
+        }
+        
+        draw_line(0, y, RESOLUTION_X, y, CYAN);         // Draw new line
+        wait_for_vsync();                               // Wait
+        pixel_buffer_start = *(pixel_ctrl_ptr + 1); 
+    }
 }
 
 // code not shown for clear_screen() and draw_line() subroutines
@@ -75,43 +106,25 @@ void clear_screen(){
     }
 }
 
-void swap(int* a, int* b){
-    int c = *a;
-    *a = *b;
-    *b = c;
-}
-
 void draw_line(int x0, int y0, int x1, int y1, short int color){
-    bool is_steep = ABS(y1 - y0) > ABS(x1 - x0);
-    // If the line is steep --> (deltay >> deltax) --> (error always > 0) --> wrong
-    if (is_steep){
-        swap(&x0, &y0);
-        swap(&x1, &y1);
-    }
-    if (x0 > x1){
-        swap(&x0, &x1);
-        swap(&y0, &y1);
-    }
-    int deltax = x1 - x0;
-    int deltay = ABS(y1 - y0);
-    int error = -(deltax / 2);
-    int y = y0;
-    int y_step;
-    if (y0 < y1) y_step = 1;
-    else y_step = -1;
-
     for (int x = x0; x <= x1; x++){
-        if (is_steep) plot_pixel(y, x, color);
-        else plot_pixel(x, y, color);
-        error += deltay;
-        if (error > 0){
-            y += y_step;
-            error -= deltax;
-        }
+        plot_pixel(x, y0, color);
     }
 }
 
 void plot_pixel(int x, int y, short int line_color)
 {
     *(short int *)(pixel_buffer_start + (y << 10) + (x << 1)) = line_color;
+}
+
+void wait_for_vsync(){
+    volatile int * pixel_ctrl_ptr = (int *)0xFF203020;
+    register int status;
+
+    *pixel_ctrl_ptr = 1;
+
+    status = *(pixel_ctrl_ptr + 3);
+    while ((status & 0x01) != 0){
+        status = *(pixel_ctrl_ptr + 3);
+    }
 }
