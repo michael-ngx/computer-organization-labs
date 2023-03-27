@@ -1,0 +1,90 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/Users/Admin/OneDrive - University of Toronto/Desktop/Winter 2023/ECE243 - Computer Organization/lab/lab7/Design_Files/part1.Verilog/ModelSim
+vdec3to8
+Z1 !s110 1679805634
+!i10b 1
+!s100 OPW7S:TCb0XGN7:TbT>Gj0
+IN30Dz7kSh9V]Ad?;>[zUn1
+Z2 VDg1SIo80bB@j0V0VzS_@n1
+R0
+Z3 w1679805623
+Z4 8../proc.v
+Z5 F../proc.v
+L0 163
+Z6 OV;L;10.5b;63
+r1
+!s85 0
+31
+Z7 !s108 1679805634.000000
+Z8 !s107 ../proc.v|
+Z9 !s90 -reportprogress|300|../proc.v|
+!i113 1
+Z10 tCvgOpt 0
+vproc
+R1
+!i10b 1
+!s100 2Q4C=jlMiJKgXC@6lb<]I2
+ILe`ZIK:DNLBP;c7?1QW3b3
+R2
+R0
+R3
+R4
+R5
+L0 1
+R6
+r1
+!s85 0
+31
+R7
+R8
+R9
+!i113 1
+R10
+vregn
+R1
+!i10b 1
+!s100 zh5dNl=b=Y67J3E3]LPH[3
+IPFGzj5==L1k2fgS8]]FVG2
+R2
+R0
+R3
+R4
+R5
+L0 185
+R6
+r1
+!s85 0
+31
+R7
+R8
+R9
+!i113 1
+R10
+vtestbench
+R1
+!i10b 1
+!s100 Jiajg9JN<Ol==9@]5GhNm2
+I91GWfW@4Kb2f6RFXCbaR92
+R2
+R0
+w1679802079
+8testbench.v
+Ftestbench.v
+L0 3
+R6
+r1
+!s85 0
+31
+R7
+!s107 testbench.v|
+!s90 -reportprogress|300|testbench.v|
+!i113 1
+R10
