@@ -10,6 +10,8 @@ MAIN:   st      r0, [r1]
         add     r0, #1
         // Inner loop
         mv      r2, =20000
+        // ld  r3, SW_ADDRESS
+        // add r2, r3
 LOOP:   sub     r2, #1
         bne     LOOP
         b       MAIN
